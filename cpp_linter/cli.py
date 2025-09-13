@@ -69,6 +69,8 @@ class Args(UserDict):
     ignore_format: str = ""
     #: See :std:option:`--passive-reviews`.
     passive_reviews: bool = False
+    #: See :std:option:`--clang-tools-prefix`.
+    clang_tools_prefix: str = ""
     #: A subcommand if provided
     command: Optional[str] = None
 
@@ -359,6 +361,21 @@ _parser_args[("-R", "--passive-reviews")] = dict(
     type=lambda input: input.lower() == "true",
     help="""Set to ``true`` to prevent Pull Request
 reviews from requesting or approving changes.""",
+)
+_parser_args[("--clang-tools-prefix",)] = dict(
+    default="",
+    help="""A prefix to prepend to the clang tool names
+(clang-tidy and clang-format). This is useful when
+using platform-specific versions or cross-compilation
+toolchains where the tools are named with a prefix,
+such as 'x86_64-linux-gnu-clang-tidy' or
+'aarch64-linux-gnu-clang-format'.
+
+Examples:
+  --clang-tools-prefix=x86_64-linux-gnu-
+  --clang-tools-prefix=aarch64-linux-gnu-
+
+Defaults to ``''`` (no prefix).""",
 )
 
 

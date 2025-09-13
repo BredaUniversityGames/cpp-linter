@@ -14,24 +14,26 @@ from .clang_format import run_clang_format, FormatAdvice
 from ..cli import Args
 
 
-def assemble_version_exec(tool_name: str, specified_version: str) -> Optional[str]:
+def assemble_version_exec(tool_name: str, specified_version: str, prefix: str = "") -> Optional[str]:
     """Assembles the command to the executable of the given clang tool based on given
     version information.
 
     :param tool_name: The name of the clang tool to be executed.
     :param specified_version: The version number or the installed path to a version of
         the tool's executable.
+    :param prefix: A prefix to prepend to the tool name (e.g., "x86_64-linux-gnu-").
     """
+    prefixed_tool_name = f"{prefix}{tool_name}"
     semver = specified_version.split(".")
     exe_path = None
     if semver and semver[0].isdigit():  # version info is not a path
         # let's assume the exe is in the PATH env var
-        exe_path = shutil.which(f"{tool_name}-{specified_version}")
+        exe_path = shutil.which(f"{prefixed_tool_name}-{specified_version}")
     elif specified_version:  # treat value as a path to binary executable
-        exe_path = shutil.which(tool_name, path=specified_version)
+        exe_path = shutil.which(prefixed_tool_name, path=specified_version)
     if exe_path is not None:
         return exe_path
-    return shutil.which(tool_name)
+    return shutil.which(prefixed_tool_name)
 
 
 def _run_on_single_file(
@@ -131,7 +133,7 @@ def capture_clang_tools_output(files: List[FileObj], args: Args) -> ClangVersion
     tidy_filter, format_filter = (None, None)
     clang_versions = ClangVersions()
     if args.style:  # if style is an empty value, then clang-format is skipped
-        format_cmd = assemble_version_exec("clang-format", args.version)
+        format_cmd = assemble_version_exec("clang-format", args.version, args.clang_tools_prefix)
         if format_cmd is None:  # pragma: no cover
             raise FileNotFoundError("clang-format executable was not found")
         clang_versions.format = _capture_tool_version(format_cmd)
@@ -141,7 +143,7 @@ def capture_clang_tools_output(files: List[FileObj], args: Args) -> ClangVersion
         )
     if args.tidy_checks != "-*":
         # if all checks are disabled, then clang-tidy is skipped
-        tidy_cmd = assemble_version_exec("clang-tidy", args.version)
+        tidy_cmd = assemble_version_exec("clang-tidy", args.version, args.clang_tools_prefix)
         if tidy_cmd is None:  # pragma: no cover
             raise FileNotFoundError("clang-tidy executable was not found")
         clang_versions.tidy = _capture_tool_version(tidy_cmd)
